@@ -1,16 +1,21 @@
-import {} from 'jest';
 import * as React from 'react';
 import {render} from 'react-dom';
-import VirtualList from '../src/';
+import VirtualList from '../src';
 
 const HEIGHT = 100;
 const ITEM_HEIGHT = 10;
 
+interface ItemAttributes {
+  index: number;
+  style: React.CSSProperties;
+  className?: string;
+}
+
 describe('VirtualList', () => {
   let node: HTMLDivElement;
-  function renderItem({index, style}: {index: number, style: React.CSSProperties}) {
+  function renderItem({index, style, ...props}: ItemAttributes) {
     return (
-      <div className="item" key={index} style={style}>
+      <div className="item" key={index} style={style} {...props}>
         Item #{index}
       </div>
     );
@@ -36,22 +41,63 @@ describe('VirtualList', () => {
     it('renders enough children to fill the view', () => {
       render(getComponent(), node);
 
-      expect(node.querySelectorAll('.item').length).toEqual(
-        HEIGHT / ITEM_HEIGHT,
-      );
+      expect(node.querySelectorAll('.item')).toHaveLength(HEIGHT / ITEM_HEIGHT);
     });
 
     it('does not render more children than available if the list is not filled', () => {
       render(getComponent({itemCount: 5}), node);
 
-      expect(node.querySelectorAll('.item').length).toEqual(5);
+      expect(node.querySelectorAll('.item')).toHaveLength(5);
     });
 
     it('handles dynamically updating the number of items', () => {
       for (let itemCount = 0; itemCount < 5; itemCount++) {
         render(getComponent({itemCount}), node);
-        expect(node.querySelectorAll('.item').length).toEqual(itemCount);
+        expect(node.querySelectorAll('.item')).toHaveLength(itemCount);
       }
+    });
+
+    describe('stickyIndices', () => {
+      const stickyIndices = [0, 10, 20, 30, 50];
+
+      function itemRenderer({index, style}) {
+        return renderItem({
+          index,
+          style,
+          className: stickyIndices.includes(index) ? 'item sticky' : 'item',
+        });
+      }
+
+      it('renders all sticky indices when scrollTop is zero', () => {
+        render(
+          getComponent({
+            itemCount: 100,
+            stickyIndices,
+            renderItem: itemRenderer,
+          }),
+          node,
+        );
+
+        expect(node.querySelectorAll('.sticky')).toHaveLength(
+          stickyIndices.length,
+        );
+      });
+
+      it('keeps sticky indices rendered when scrolling', () => {
+        render(
+          getComponent({
+            itemCount: 100,
+            stickyIndices,
+            renderItem: itemRenderer,
+            scrollOffset: 500,
+          }),
+          node,
+        );
+
+        expect(node.querySelectorAll('.sticky')).toHaveLength(
+          stickyIndices.length,
+        );
+      });
     });
   });
 
@@ -90,13 +136,19 @@ describe('VirtualList', () => {
     });
 
     it('scrolls to the correct position for :scrollToAlignment "end"', () => {
-      render(getComponent({
-        scrollToIndex: 99,
-      }), node);
-      render(getComponent({
-        scrollToAlignment: 'end',
-        scrollToIndex: 49,
-      }), node);
+      render(
+        getComponent({
+          scrollToIndex: 99,
+        }),
+        node,
+      );
+      render(
+        getComponent({
+          scrollToAlignment: 'end',
+          scrollToIndex: 49,
+        }),
+        node,
+      );
 
       // 100 items * 10 item height = 1,000 total item height; 10 items can be visible at a time.
       expect(node.textContent).toContain('Item #40');
@@ -104,13 +156,19 @@ describe('VirtualList', () => {
     });
 
     it('scrolls to the correct position for :scrollToAlignment "center"', () => {
-      render(getComponent({
-        scrollToIndex: 99,
-      }), node);
-      render(getComponent({
-        scrollToAlignment: 'center',
-        scrollToIndex: 49,
-      }), node);
+      render(
+        getComponent({
+          scrollToIndex: 99,
+        }),
+        node,
+      );
+      render(
+        getComponent({
+          scrollToAlignment: 'center',
+          scrollToIndex: 49,
+        }),
+        node,
+      );
 
       // 100 items * 10 item height = 1,000 total item height; 11 items can be visible at a time (the first and last item are only partially visible)
       expect(node.textContent).toContain('Item #44');
@@ -155,9 +213,12 @@ describe('VirtualList', () => {
 
   describe(':scrollOffset property', () => {
     it('renders correctly when an initial :scrollOffset property is specified', () => {
-      render(getComponent({
-        scrollOffset: 100,
-      }), node);
+      render(
+        getComponent({
+          scrollOffset: 100,
+        }),
+        node,
+      );
       const items = node.querySelectorAll('.item');
       const first = items[0];
       const last = items[items.length - 1];
@@ -166,7 +227,7 @@ describe('VirtualList', () => {
       expect(last.textContent).toContain('Item #19');
     });
 
-    it('renders correctly when an initial :scrollOffset property is specified', () => {
+    it('renders correctly when an :scrollOffset property is specified after the component has initialized', () => {
       render(getComponent(), node);
       let items = node.querySelectorAll('.item');
       let first = items[0];
@@ -175,9 +236,12 @@ describe('VirtualList', () => {
       expect(first.textContent).toContain('Item #0');
       expect(last.textContent).toContain('Item #9');
 
-      render(getComponent({
-        scrollOffset: 100,
-      }), node);
+      render(
+        getComponent({
+          scrollOffset: 100,
+        }),
+        node,
+      );
       items = node.querySelectorAll('.item');
       first = items[0];
       last = items[items.length - 1];
