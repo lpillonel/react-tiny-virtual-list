@@ -56,7 +56,9 @@ export interface Props {
   scrollDirection?: DIRECTION;
   stickyIndices?: number[];
   style?: React.CSSProperties;
+  innerStyle?: React.CSSProperties;
   width?: number | string;
+  children?: React.ReactNode;
   onItemsRendered?({startIndex, stopIndex}: RenderedRows): void;
   onScroll?(offset: number, event: UIEvent): void;
   renderItem(itemInfo: ItemInfo): React.ReactNode;
@@ -131,7 +133,9 @@ export default class VirtualList extends React.PureComponent<Props, State> {
     ]),
     stickyIndices: PropTypes.arrayOf(PropTypes.number),
     style: PropTypes.object,
+    innerStyle: PropTypes.object,
     width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    children: PropTypes.node,
   };
 
   itemSizeGetter = (itemSize: Props['itemSize']) => {
@@ -289,6 +293,8 @@ export default class VirtualList extends React.PureComponent<Props, State> {
       stickyIndices,
       style,
       width,
+      children,
+      innerStyle,
       ...props
     } = this.props;
     const {offset} = this.state;
@@ -299,8 +305,9 @@ export default class VirtualList extends React.PureComponent<Props, State> {
     });
     const items: React.ReactNode[] = [];
     const wrapperStyle = {...STYLE_WRAPPER, ...style, height, width};
-    const innerStyle = {
+    const listStyle = {
       ...STYLE_INNER,
+      ...innerStyle,
       [sizeProp[scrollDirection]]: this.sizeAndPositionManager.getTotalSize(),
     };
 
@@ -315,7 +322,7 @@ export default class VirtualList extends React.PureComponent<Props, State> {
       );
 
       if (scrollDirection === DIRECTION.HORIZONTAL) {
-        innerStyle.display = 'flex';
+        listStyle.display = 'flex';
       }
     }
 
@@ -343,7 +350,10 @@ export default class VirtualList extends React.PureComponent<Props, State> {
 
     return (
       <div ref={this.getRef} {...props} style={wrapperStyle}>
-        <div style={innerStyle}>{items}</div>
+        <div style={listStyle}>
+          {children}
+          {items}
+        </div>
       </div>
     );
   }

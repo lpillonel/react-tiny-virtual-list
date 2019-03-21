@@ -1,5 +1,10 @@
 ## Changelog
 
+### 2.2.1
+
+Allow children to be passed and rendered alongside items
+innerStyle property added
+
 ### 2.2.0
 
 Added support for `stickyIndices`. Pass an array of indexes (eg. [0, 10, 25, 30]) to the `stickyIndices` prop to make certain items in the list sticky (position: sticky) [#55](https://github.com/clauderic/react-tiny-virtual-list/pull/55)
